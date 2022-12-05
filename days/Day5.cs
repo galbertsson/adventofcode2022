@@ -1,39 +1,75 @@
-class Day5 {
+class Day5
+{
     public void Start()
     {
-        var input = System.IO.File.ReadAllText("./days/day5input.txt").Split(Environment.NewLine+Environment.NewLine);
+        var input = System.IO.File.ReadAllText("./days/day5input.txt").Split(Environment.NewLine + Environment.NewLine);
 
         var shipModel = getShipModel(input[0]);
         var instructions = getInstructions(input[1]);
+
+        foreach (var instruction in instructions)
+        {
+            var createsToMove = shipModel[instruction.from].TakeLast(instruction.createsToMove);
+            shipModel[instruction.to].AddRange(createsToMove); // Reverse for part1
+            shipModel[instruction.from].RemoveRange(shipModel[instruction.from].Count() - instruction.createsToMove, instruction.createsToMove);
+        }
+
+
+        var topLayer = "";
+        foreach (var stack in shipModel)
+        {
+            topLayer += stack.Value.Last();
+        }
+        Console.WriteLine(topLayer);
     }
 
-    private LinkedList<(string from, string to, int createsToMove)> getInstructions(string input) {
-        var instructions = new LinkedList<(string from, string to, int createsToMove)>();
+    private List<(int createsToMove, char from, char to)> getInstructions(string input)
+    {
+        var instructions = new List<(int createsToMove, char from, char to)>();
+
+        var commands = input.Split(Environment.NewLine);
+        foreach (var command in commands)
+        {
+            var cratesAndRest = command.Substring("move ".Length).Split(" from ");
+            var createsToMove = Int32.Parse(cratesAndRest[0]);
+
+            var fromAndTo = cratesAndRest[1].Split(" to ");
+            var from = fromAndTo[0][0];
+            var to = fromAndTo[1][0];
+
+            instructions.Add((createsToMove, from, to));
+        }
+
         return instructions;
     }
 
-    private Dictionary<char, char[]> getShipModel(string input) {
-        var ship = new Dictionary<char, char[]>();
-
+    private Dictionary<char, List<char>> getShipModel(string input)
+    {
+        var ship = new Dictionary<char, List<char>>();
         var lines = input.Split(Environment.NewLine);
-        var lastLineIndex = lines.Length-1;
-        var totalRows = lines[lastLineIndex].Length;
 
-        for (var row = 0;row<totalRows;row++) {
-            var columnNumber = lines[lastLineIndex][row];
-            if (!columnNumber.Equals(' ')) {
-                var crateStack = new LinkedList<char>();
-                for (var lineNumber = lastLineIndex - 1; lineNumber>=0;lineNumber--) {
-                    var createChar = lines[lineNumber][row];
-
-                    if (!createChar.Equals(' ')) {
-                        crateStack.Append(createChar);
-                        Console.WriteLine(createChar);
-                    }
-                }
-                
-                ship.Add(columnNumber, crateStack.ToArray());
+        var totalRows = lines.Length - 1;
+        var totalColumns = lines[totalRows].Length;
+        for (var column = 0; column < totalColumns; column++)
+        {
+            var columnNumber = lines[totalRows][column];
+            if (columnNumber.Equals(' '))
+            {
+                continue;
             }
+
+            var crateStack = new List<char>();
+            for (var row = totalRows - 1; row >= 0; row--)
+            {
+                var createChar = lines[row][column];
+
+                if (!createChar.Equals(' '))
+                {
+                    crateStack.Add(createChar);
+                }
+            }
+
+            ship.Add(columnNumber, crateStack);
         }
 
         return ship;
