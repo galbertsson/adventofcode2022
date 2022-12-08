@@ -8,19 +8,26 @@ class Day7
 
         var avaliableSpace = 70000000 - fileTree.getTotalSize();
         var updateSize = 30000000;
-        var neededSpace = -(avaliableSpace - updateSize);
+        var neededSpace = updateSize - avaliableSpace;
         var dirSizes = getDirectoriesWithSize(fileTree.getChildren());
 
-        var bestMatch = -1;
+        var bestSizeForDeletion = Int32.MaxValue;
+        var totalSizeOver100K = 0;
         foreach (var dirSize in dirSizes)
         {
             if (dirSize >= neededSpace)
             {
-                bestMatch = bestMatch == -1 ? dirSize : Math.Min(bestMatch, dirSize);
+                bestSizeForDeletion = Math.Min(bestSizeForDeletion, dirSize);
+            }
+
+            if (dirSize <= 100000)
+            {
+                totalSizeOver100K += dirSize;
             }
         }
 
-        Console.WriteLine(bestMatch);
+        Console.WriteLine(totalSizeOver100K);
+        Console.WriteLine(bestSizeForDeletion);
     }
 
     private int[] getDirectoriesWithSize(Node[] baseDirectory)
@@ -45,32 +52,6 @@ class Day7
         return outData.ToArray();
     }
 
-    private int countDirectoriesWithMaxSize(Node[] baseDirectory)
-    {
-        var dirsToSearch = new List<Node>(baseDirectory);
-        var totalSizes = 0;
-
-        while (dirsToSearch.Count() > 0)
-        {
-            var node = dirsToSearch[0];
-            var children = node.getChildren();
-            if (children.Length > 0)
-            {
-                dirsToSearch.AddRange(children);
-
-                var nodeSize = node.getTotalSize();
-                if (nodeSize <= 100000)
-                {
-                    totalSizes += nodeSize;
-                }
-            }
-
-            dirsToSearch.RemoveAt(0);
-        }
-
-        return totalSizes;
-    }
-
     private Node interpeterCommand(Node fileSystemRoot, Node currentDirectory, string command, string? argument, string[] commandOutput)
     {
         if (command == "cd")
@@ -82,22 +63,10 @@ class Day7
             if (argument == "..")
             {
                 var parent = currentDirectory.GetParent();
-
-                if (parent == null)
-                {
-                    Console.WriteLine("Node not found, exiting");
-                    return currentDirectory;
-                }
                 return parent;
             }
 
             var newCurentDir = currentDirectory.GetChild(argument);
-            if (newCurentDir == null)
-            {
-                Console.WriteLine("Node not found, exiting");
-                return currentDirectory;
-            }
-
             return newCurentDir;
         }
         else if (command == "ls")
@@ -150,7 +119,7 @@ public class Node
     string name;
     int size;
     Node? parent;
-    List<Node> children = new List<Node>(); // Maybe make this a set instead? Not sure
+    List<Node> children = new List<Node>();
 
     public Node(string name, int size, Node? parent)
     {
